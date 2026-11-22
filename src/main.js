@@ -47,8 +47,8 @@ add_button.addEventListener(`click`,() => {
 
 closeButton.addEventListener(`click`, () => {
   dailog.close()
-  nameInput.value=null
-  urlInput.value=null
+  nameInput.value=``
+  urlInput.value=``
 })
 
 savebutton.addEventListener(`click`,() => {
@@ -58,15 +58,33 @@ savebutton.addEventListener(`click`,() => {
     alert(`enter name and url both`)
     return
   }
-  bookmarks.push({
-    name:name,
-    url:url
-  })
-  const card = document.createElement(`div`)
-  card.className="card"
+  if (!/^https?:\/\//i.test(url)){
+    url=`https://`+url
+  }
+  try {
+    const parsedUrl = new URL(url)
+    if (![`http:`,`https:`].includes(parsedUrl.protocol)){
+      throw new Error(`invalid url`)
+    }
+  const bookmark = {name,url:parsedUrl.href}
+  bookmarks.push({bookmark})
+
+  const card = document.createElement(`a`)
+  card.className=`card`
+  card.href=bookmark.url
+
+  const logo = document.createElement(`img`)
+  logo.className=`logo`
+  logo.src=`https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=128`
+  
+  const title = document.createElement(`h3`)
+  title.textContent=bookmark.name
+  card.append(logo,title)
   bookmarkList.append(card)
   dailog.close()
-  
+  } catch {
+    alert(`not a valid url`)
+    }
 })
 
 
