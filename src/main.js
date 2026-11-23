@@ -1,5 +1,4 @@
 import './style.css'
-import { setupCounter } from './counter.js'
 
 document.querySelector('#app').innerHTML = `
 <section id="center">
@@ -7,7 +6,6 @@ document.querySelector('#app').innerHTML = `
     <h1>Your Very Important Bookmarks</h1>
     <p>stored with us for you to keep your head clutter free</p>
   </div>
-  <button id="counter" type="button" class="counter"></button>
 </section>
 
 
@@ -15,7 +13,7 @@ document.querySelector('#app').innerHTML = `
   <dialog id="bookmarkDialog">
   <h2>Add Bookmark</h2><div class="inputarea">
   <input type="text" id="bookmarkName" placeholder="Name">
-  <input type="url" id="urlName" placeholder="Url"></div><br>
+  <input type="url" id="urlName" placeholder="https://"></div><br>
   <div class="buttonarea">
   <button id="saveBookmark">Save</button>
   <button id="closeDialog">Cancel</button>
@@ -39,7 +37,40 @@ const urlInput = document.querySelector(`#urlName`)
 const bookmarkList = document.querySelector(`#bookmarkList`)
 const savebutton = document.querySelector(`#saveBookmark`)
 
-let bookmarks = []
+let bookmarks = JSON.parse(localStorage.getItem(`bookmarks`)) || []
+
+
+function renderBookmarks(){
+  bookmarkList.innerHTML=``
+  bookmarks.forEach((bookmark,index) => {
+  const card = document.createElement(`a`)
+  card.className=`card`
+  card.href=bookmark.url
+  card.target = `_blank`
+  card.rel=`noopener noreferrer`
+
+  const logo = document.createElement(`img`)
+  logo.className=`logo`
+  logo.src=`https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}&sz=128`
+  
+  const title = document.createElement(`h3`)
+  title.textContent=bookmark.name
+  card.append(logo,title)
+  const deleteButton = document.createElement(`button`)
+  deleteButton.textContent=`x`
+  deleteButton.className=`delete-button`
+  deleteButton.type=`button`
+  deleteButton.addEventListener(`click`, (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    bookmarks.splice(index,1)
+    localStorage.setItem(`bookmarks`, JSON.stringify(bookmarks))
+    renderBookmarks()
+  })
+  card.append(logo,title,deleteButton)
+  bookmarkList.append(card)
+  })
+}
 
 add_button.addEventListener(`click`,() => {
   dailog.showModal()
@@ -66,26 +97,15 @@ savebutton.addEventListener(`click`,() => {
     if (![`http:`,`https:`].includes(parsedUrl.protocol)){
       throw new Error(`invalid url`)
     }
-  const bookmark = {name,url:parsedUrl.href}
-  bookmarks.push({bookmark})
-
-  const card = document.createElement(`a`)
-  card.className=`card`
-  card.href=bookmark.url
-
-  const logo = document.createElement(`img`)
-  logo.className=`logo`
-  logo.src=`https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=128`
-  
-  const title = document.createElement(`h3`)
-  title.textContent=bookmark.name
-  card.append(logo,title)
-  bookmarkList.append(card)
-  dailog.close()
+    bookmarks.push({name:name,url:parsedUrl.href})
+    localStorage.setItem(`bookmarks`,JSON.stringify(bookmarks))
+    renderBookmarks()
+    nameInput.value=``
+    urlInput.value=``
+    dailog.close()
   } catch {
-    alert(`not a valid url`)
-    }
+    alert(`enter valid url`)
+  }
 })
 
-
-setupCounter(document.querySelector('#counter'))
+  renderBookmarks()
