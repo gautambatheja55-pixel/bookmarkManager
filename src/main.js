@@ -7,8 +7,9 @@ document.querySelector('#app').innerHTML = `
     <p>stored with us for you to keep your head clutter free</p>
   </div>
 </section>
-
-
+<div class="searcharea">
+<input type="search" id="searchBookmarks" placeholder="Search your bookmarks..."></input>
+</div>
 <section id="cards">
   <dialog id="bookmarkDialog">
   <h2>Add Bookmark</h2><div class="inputarea">
@@ -36,41 +37,50 @@ const nameInput = document.querySelector(`#bookmarkName`)
 const urlInput = document.querySelector(`#urlName`)
 const bookmarkList = document.querySelector(`#bookmarkList`)
 const savebutton = document.querySelector(`#saveBookmark`)
+const searchInput = document.querySelector(`#searchBookmarks`)
 
 let bookmarks = JSON.parse(localStorage.getItem(`bookmarks`)) || []
 
 
-function renderBookmarks(){
+function renderBookmarks(search =``){
   bookmarkList.innerHTML=``
-  bookmarks.forEach((bookmark,index) => {
-  const card = document.createElement(`a`)
-  card.className=`card`
-  card.href=bookmark.url
-  card.target = `_blank`
-  card.rel=`noopener noreferrer`
 
-  const logo = document.createElement(`img`)
-  logo.className=`logo`
-  logo.src=`https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}&sz=128`
-  
-  const title = document.createElement(`h3`)
-  title.textContent=bookmark.name
-  card.append(logo,title)
-  const deleteButton = document.createElement(`button`)
-  deleteButton.textContent=`x`
-  deleteButton.className=`delete-button`
-  deleteButton.type=`button`
-  deleteButton.addEventListener(`click`, (event) => {
-    event.preventDefault()
-    event.stopPropagation()
-    bookmarks.splice(index,1)
-    localStorage.setItem(`bookmarks`, JSON.stringify(bookmarks))
-    renderBookmarks()
-  })
+  const filteredBookmarks = bookmarks.map((bookmark,index) => ({...bookmark,originalIndex: index}))
+  .filter(bookmark => 
+    bookmark.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  filteredBookmarks.forEach((bookmark) => {
+    const card = document.createElement(`a`)
+    card.className=`card`
+    const link = document.createElement(`a`)
+    link.href=bookmark.url
+    link.target = `_blank`
+    link.rel=`noopener noreferrer`
+    const logo = document.createElement(`img`)
+    logo.className=`logo`
+    const domain = new URL(bookmark.url).hostname
+    logo.src=`https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+    const title = document.createElement(`h3`)
+    title.textContent=bookmark.name
+    link.append(logo,title)
+    const deleteButton = document.createElement(`button`)
+    deleteButton.textContent=`x`
+    deleteButton.className=`delete-button`
+    deleteButton.type=`button`
+    deleteButton.addEventListener(`click`, () => {
+      bookmarks.splice(index,1)
+      localStorage.setItem(`bookmarks`, JSON.stringify(bookmarks))
+      renderBookmarks()
+    })
   card.append(logo,title,deleteButton)
   bookmarkList.append(card)
   })
 }
+
+searchInput.addEventListener(`input`,()=>{
+  renderBookmarks(searchInput.value)
+})
 
 add_button.addEventListener(`click`,() => {
   dailog.showModal()
@@ -90,7 +100,7 @@ savebutton.addEventListener(`click`,() => {
     return
   }
   if (!/^https?:\/\//i.test(url)){
-    url=`https://`+url
+    url=`https://`+ url
   }
   try {
     const parsedUrl = new URL(url)
